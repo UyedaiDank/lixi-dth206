@@ -7,32 +7,37 @@
     <style>
         :root { --red: #d32f2f; --gold: #ffd700; }
         body { background: #8b0000; color: var(--gold); font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; }
-        .box { background: var(--red); padding: 20px; border-radius: 15px; border: 2px solid var(--gold); display: inline-block; width: 100%; max-width: 350px; }
+        .box { background: var(--red); padding: 20px; border-radius: 15px; border: 2px solid var(--gold); display: inline-block; width: 100%; max-width: 350px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
         .row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; font-size: 1.2rem; }
-        input { width: 60px; padding: 5px; border-radius: 5px; border: none; text-align: center; font-weight: bold; }
-        button { background: var(--gold); color: #8b0000; border: none; padding: 12px 25px; font-weight: bold; border-radius: 25px; cursor: pointer; font-size: 1rem; margin-top: 20px; }
-        #link-share { display: none; margin-top: 20px; background: #fff; color: #333; padding: 15px; border-radius: 10px; word-break: break-all; }
+        input { width: 70px; padding: 8px; border-radius: 5px; border: none; text-align: center; font-weight: bold; font-size: 1rem; }
+        button { background: var(--gold); color: #8b0000; border: none; padding: 15px 30px; font-weight: bold; border-radius: 25px; cursor: pointer; font-size: 1.1rem; margin-top: 20px; transition: 0.3s; }
+        button:hover { transform: scale(1.05); background: white; }
+        #link-share { display: none; margin-top: 30px; background: #fff; color: #333; padding: 20px; border-radius: 10px; word-break: break-all; border: 3px dashed var(--red); }
+        a { color: #d32f2f; font-weight: bold; text-decoration: none; }
     </style>
 </head>
 <body>
-    <h1>⚙️ THIẾT LẬP LÌ XÌ</h1>
+    <h1>🧧 THIẾT LẬP KHO LÌ XÌ</h1>
     <div class="box">
-        <div class="row">Tờ 10k: <input type="number" id="v10" value="5"></div>
-        <div class="row">Tờ 20k: <input type="number" id="v20" value="3"></div>
-        <div class="row">Tờ 50k: <input type="number" id="v50" value="2"></div>
-        <div class="row">Tờ 100k: <input type="number" id="v100" value="1"></div>
-        <button id="btnCreate">TẠO KHO LÌ XÌ & LẤY LINK</button>
+        <div class="row">Mệnh giá 10k: <input type="number" id="v10" value="5" min="0"></div>
+        <div class="row">Mệnh giá 20k: <input type="number" id="v20" value="3" min="0"></div>
+        <div class="row">Mệnh giá 50k: <input type="number" id="v50" value="2" min="0"></div>
+        <div class="row">Mệnh giá 100k: <input type="number" id="v100" value="1" min="0"></div>
+        <button id="btnCreate">BẮT ĐẦU TẠO LÌ XÌ</button>
     </div>
 
     <div id="link-share">
-        <p><b>Thành công!</b> Gửi link này cho bạn bè:</p>
-        <a id="url" href="#" style="color: blue;">Đang tạo...</a>
+        <p>✨ <b>Khởi tạo thành công!</b> ✨</p>
+        <p>Gửi link dưới đây cho bạn bè:</p>
+        <a id="url" href="#" target="_blank">Đang lấy link...</a>
+        <p style="font-size: 0.8rem; color: #666; margin-top: 10px;">(Lưu ý: Chỉ gửi link này, không gửi link trang Admin)</p>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // Cấu hình Firebase của bạn
         const firebaseConfig = {
             apiKey: "AIzaSyBVp52h5FcZ35e19NqhbV0aWw2-rMrYgDQ",
             authDomain: "quan-ly-li-xi.firebaseapp.com",
@@ -49,19 +54,35 @@
         document.getElementById('btnCreate').onclick = async () => {
             let pool = [];
             [10, 20, 50, 100].forEach(v => {
-                let count = document.getElementById('v'+v).value;
-                for(let i=0; i<count; i++) pool.push({ val: v, status: 'available' });
+                let count = parseInt(document.getElementById('v' + v).value) || 0;
+                for(let i = 0; i < count; i++) {
+                    pool.push({ val: v, status: 'available' });
+                }
             });
+
+            if (pool.length === 0) {
+                alert("Bạn cần thêm ít nhất 1 bao lì xì!");
+                return;
+            }
+
+            // Xáo trộn ngẫu nhiên
             pool.sort(() => Math.random() - 0.5);
 
             try {
                 await set(ref(db, 'lixi_data'), pool);
-                const userLink = window.location.href.replace('index.html', '') + 'user.html';
+                // Tạo link dẫn đến user.html dựa trên URL hiện tại
+                const currentUrl = window.location.href;
+                const userLink = currentUrl.substring(0, currentUrl.lastIndexOf("/")) + "/user.html";
+                
                 document.getElementById('link-share').style.display = 'block';
                 document.getElementById('url').innerText = userLink;
                 document.getElementById('url').href = userLink;
-                alert("Đã khởi tạo kho lì xì thành công!");
-            } catch (e) { alert("Lỗi: " + e.message); }
+                
+                alert("Kho lì xì đã sẵn sàng!");
+            } catch (e) {
+                console.error(e);
+                alert("Lỗi khi kết nối Firebase: " + e.message + "\nHãy kiểm tra lại Rules của bạn!");
+            }
         };
     </script>
 </body>
