@@ -8,7 +8,6 @@
     <style>
         :root { --red: #ce1f1f; --gold: #ffd700; }
         body { background: #8b0000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; margin: 0; padding: 20px; overflow-x: hidden; }
-        
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; max-width: 600px; margin: 20px auto; }
         .lixi { 
             aspect-ratio: 2/3; background: var(--red); border: 2px solid var(--gold); border-radius: 10px;
@@ -16,28 +15,17 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.4); transition: 0.3s;
         }
         .lixi:hover { transform: translateY(-10px) rotate(3deg); background: #e62e2e; }
-
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; padding: 20px; box-sizing: border-box; }
-        
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; padding: 20px; box-sizing: border-box; }
         .win-box { background: white; color: #d32f2f; padding: 30px; border-radius: 20px; border: 5px solid var(--gold); width: 100%; max-width: 320px; text-align: center; }
-        
-        input#userName { 
-            width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #ddd; border-radius: 10px; 
-            box-sizing: border-box; font-size: 1.1rem; text-align: center; color: #333; font-weight: bold;
-        }
-        
-        button { 
-            padding: 12px 20px; cursor: pointer; background: var(--gold); border: none; 
-            font-weight: bold; border-radius: 10px; width: 100%; font-size: 1.1rem; 
-            color: #8b0000; box-shadow: 0 4px 0 #b8860b; 
-        }
+        input#userName { width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 1.1rem; text-align: center; color: #333; font-weight: bold; }
+        button { padding: 12px 20px; cursor: pointer; background: var(--gold); border: none; font-weight: bold; border-radius: 10px; width: 100%; font-size: 1.1rem; color: #8b0000; box-shadow: 0 4px 0 #b8860b; }
         button:active { transform: translateY(2px); box-shadow: none; }
     </style>
 </head>
 <body>
 
     <h1>🧧 HÁI LỘC ĐẦU XUÂN 🧧</h1>
-    <div class="grid" id="main-grid">Đang kết nối kho lì xì...</div>
+    <div class="grid" id="main-grid">Đang tải bao lì xì...</div>
 
     <div class="overlay" id="nameForm" style="display: flex;">
         <div class="win-box">
@@ -53,8 +41,8 @@
             <h2 style="margin:0">CHÚC MỪNG</h2>
             <p id="picked-name" style="color: #333; font-weight: bold; margin: 10px 0;"></p>
             <h1 id="amount" style="font-size: 4rem; margin: 10px 0;">0k</h1>
-            <p id="msg-status" style="font-size: 0.8rem; color: #888;">Đang gửi thông báo cho Lan Anh...</p>
-            <button onclick="location.reload()">CẢM ƠN NHÉ!</button>
+            <p id="msg-status" style="font-size: 0.8rem; color: #888;">Đang báo về Telegram cho Lan Anh...</p>
+            <button onclick="location.reload()">CẢM ƠN LAN ANH NHÉ!</button>
         </div>
     </div>
 
@@ -72,7 +60,6 @@
             appId: "1:118236643323:web:aca32c735fb2d9f810155e"
         };
 
-        // THÔNG TIN TELEGRAM CỦA LAN ANH
         const TELEGRAM_TOKEN = '8506964729:AAFOdrKaq5TUMiqI7OWfHKpNrwY4qZoynVo'; 
         const TELEGRAM_CHAT_ID = '7114174347'; 
 
@@ -96,46 +83,38 @@
             const data = snap.val();
             grid.innerHTML = '';
             if (!data) { grid.innerHTML = 'Kho lì xì đang trống!'; return; }
-
             data.forEach((item, index) => {
                 if (item && item.status === 'available') {
                     const card = document.createElement('div');
-                    card.className = 'lixi';
-                    card.innerHTML = '🧧';
+                    card.className = 'lixi'; card.innerHTML = '🧧';
                     card.onclick = () => pick(index, item.val);
                     grid.appendChild(card);
                 }
             });
-            if (grid.innerHTML === '') grid.innerHTML = 'Hết lì xì rồi! Chúc bạn năm mới bình an.';
+            if (grid.innerHTML === '') grid.innerHTML = 'Hết lì xì rồi!';
         });
 
         async function sendTelegram(name, amount) {
-            const message = `🧧 LÌ XÌ MỚI 🧧\n👤 Người nhận: ${name}\n💰 Số tiền: ${amount}.000đ`;
+            const message = `🧧 LÌ XÌ MỚI! 🧧\n👤 Người nhận: ${name}\n💰 Số tiền: ${amount}.000đ`;
             const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(message)}`;
             try { 
                 await fetch(url);
-                document.getElementById('msg-status').innerText = "Lan Anh đã nhận được báo cáo!";
-            } catch (e) { document.getElementById('msg-status').innerText = "Lỗi gửi thông báo!"; }
+                document.getElementById('msg-status').innerText = "Lan Anh đã nhận được tin nhắn!";
+            } catch (e) { document.getElementById('msg-status').innerText = "Lỗi gửi Telegram!"; }
         }
 
         async function pick(index, val) {
             if (picking || !currentUser) return;
-            if (confirm(`Bạn chắc chắn chọn bao này chứ?`)) {
+            if (confirm(`Bạn [${currentUser}] chắc chắn chọn bao này chứ?`)) {
                 picking = true;
                 try {
-                    await update(ref(db, `lixi_data/${index}`), { 
-                        status: 'opened', 
-                        user: currentUser 
-                    });
+                    await update(ref(db, `lixi_data/${index}`), { status: 'opened', user: currentUser });
                     document.getElementById('picked-name').innerText = "Chúc mừng " + currentUser;
                     document.getElementById('amount').innerText = val + "k";
                     document.getElementById('result').style.display = 'flex';
-                    
-                    // Bắn pháo hoa ăn mừng
-                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#ff0000', '#ffd700', '#ffffff'] });
-                    
+                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
                     sendTelegram(currentUser, val);
-                } catch (e) { alert("Lỗi kết nối: " + e.message); picking = false; }
+                } catch (e) { alert("Lỗi: " + e.message); picking = false; }
             }
         }
     </script>
