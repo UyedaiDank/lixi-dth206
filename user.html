@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Bốc Lì Xì May Mắn - Lan Anh</title>
+    <title>Bốc Lì Xì May Mắn - Đinh Tuấn Hùng</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
@@ -24,7 +24,7 @@
 <body>
 
     <h1>🧧 HÁI LỘC ĐẦU XUÂN 🧧</h1>
-    <div id="status">Chào mừng bạn bốc lì xì Lan Anh!</div>
+    <div id="status">Chào mừng bạn bốc lì xì Đinh Tuấn Hùng!</div>
     <div class="grid" id="main-grid"></div>
 
     <div class="overlay" id="nameForm">
@@ -41,7 +41,7 @@
             <h2 style="margin:0">CHÚC MỪNG</h2>
             <p id="picked-name" style="color: #333; font-weight: bold; margin: 10px 0;"></p>
             <h1 id="amount" style="font-size: 4rem; margin: 10px 0;">0k</h1>
-            <p id="msg-status" style="font-size: 0.8rem; color: #888;">Lan Anh đang nhận thông báo...</p>
+            <p id="msg-status" style="font-size: 0.8rem; color: #888;">Đinh Tuấn Hùng đang nhận thông báo...</p>
             <button onclick="location.reload()">ĐÓNG</button>
         </div>
     </div>
@@ -73,7 +73,7 @@
             const rawName = document.getElementById('userName').value.trim();
             if (rawName.length < 2) return alert("Vui lòng nhập tên thật!");
             
-            // Chuẩn hóa tên: xóa dấu, viết thường để tránh lách luật (Ví dụ: "Lan Anh" và "lan anh")
+            // Chuẩn hóa tên: xóa dấu, viết thường để tránh lách luật (Ví dụ: "Đinh Tuấn Hùng" và "Đinh Tuấn Hùng")
             const safeName = rawName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_");
 
             try {
@@ -130,3 +130,4 @@
     </script>
 </body>
 </html>
+
