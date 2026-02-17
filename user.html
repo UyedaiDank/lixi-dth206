@@ -13,21 +13,19 @@
             display: flex; align-items: center; justify-content: center; font-size: 40px; cursor: pointer;
             transition: 0.3s;
         }
-        .lixi.opened { display: none; } /* Người sau không thấy bao đã bốc */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
-        .win-box { background: white; color: red; padding: 30px; border-radius: 20px; border: 5px solid gold; }
+        .win-box { background: white; color: red; padding: 30px; border-radius: 20px; border: 5px solid gold; text-align: center; }
     </style>
 </head>
 <body>
     <h1>🧧 HÁI LỘC ĐẦU XUÂN 🧧</h1>
-    <p>Chọn một bao để nhận may mắn!</p>
-    <div class="grid" id="main-grid">Đang tải...</div>
+    <div class="grid" id="main-grid">Đang tải dữ liệu lì xì...</div>
 
     <div class="overlay" id="result">
         <div class="win-box">
             <h2>Chúc mừng!</h2>
-            <h1 id="amount" style="font-size: 3rem;">0k</h1>
-            <button onclick="location.reload()" style="padding:10px 20px; cursor:pointer">Đóng</button>
+            <h1 id="amount" style="font-size: 3rem; margin: 10px 0;">0k</h1>
+            <button onclick="location.reload()" style="padding:10px 20px; cursor:pointer; background: gold; border:none; border-radius:10px; font-weight:bold;">Nhận Lộc</button>
         </div>
     </div>
 
@@ -35,6 +33,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // Cấu hình Firebase của bạn
         const firebaseConfig = {
             apiKey: "AIzaSyBVp52h5FcZ35e19NqhbV0aWw2-rMrYgDQ",
             authDomain: "quan-ly-li-xi.firebaseapp.com",
@@ -47,32 +46,47 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        let hasPicked = false;
+        let picked = false;
 
-        onValue(ref(db, 'lixi_data'), (snap) => {
-            const data = snap.val();
-            const grid = document.getElementById('main-grid');
+        const grid = document.getElementById('main-grid');
+        const lixiRef = ref(db, 'lixi_data');
+
+        onValue(lixiRef, (snapshot) => {
+            const data = snapshot.val();
             grid.innerHTML = '';
-            if(!data) { grid.innerHTML = 'Hết lì xì rồi!'; return; }
+            if (!data) {
+                grid.innerHTML = 'Chưa có lì xì nào được thiết lập.';
+                return;
+            }
 
             data.forEach((item, index) => {
-                if(item.status === 'available') {
+                // Chỉ hiển thị những bao chưa mở
+                if (item.status === 'available') {
                     const card = document.createElement('div');
                     card.className = 'lixi';
                     card.innerHTML = '🧧';
-                    card.onclick = () => pick(index, item.val);
+                    card.onclick = () => pickLixi(index, item.val);
                     grid.appendChild(card);
                 }
             });
+            
+            if (grid.innerHTML === '' && data.length > 0) {
+                grid.innerHTML = 'Tất cả lì xì đã được bốc hết!';
+            }
         });
 
-        async function pick(index, val) {
-            if(hasPicked) return;
-            if(confirm(`Bạn chọn bao này nhé?`)) {
-                hasPicked = true;
-                await update(ref(db, `lixi_data/${index}`), { status: 'opened' });
-                document.getElementById('amount').innerText = val + "k";
-                document.getElementById('result').style.display = 'flex';
+        async function pickLixi(index, val) {
+            if (picked) return;
+            if (confirm("Bạn chọn bao lì xì này chứ?")) {
+                picked = true;
+                try {
+                    await update(ref(db, `lixi_data/${index}`), { status: 'opened' });
+                    document.getElementById('amount').innerText = val + "k";
+                    document.getElementById('result').style.display = 'flex';
+                } catch (e) {
+                    alert("Lỗi khi bốc: " + e.message);
+                    picked = false;
+                }
             }
         }
     </script>
