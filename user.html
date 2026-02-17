@@ -15,7 +15,7 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.4); transition: 0.3s;
         }
         .lixi:hover { transform: translateY(-10px) rotate(3deg); background: #e62e2e; }
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; padding: 20px; box-sizing: border-box; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; padding: 20px; box-sizing: border-box; }
         .win-box { background: white; color: #d32f2f; padding: 30px; border-radius: 20px; border: 5px solid var(--gold); width: 100%; max-width: 320px; text-align: center; }
         input#userName { width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 1.1rem; text-align: center; font-weight: bold; }
         button { padding: 12px 20px; cursor: pointer; background: var(--gold); border: none; font-weight: bold; border-radius: 10px; width: 100%; font-size: 1.1rem; color: #8b0000; }
@@ -24,25 +24,25 @@
 <body>
 
     <h1>🧧 HÁI LỘC ĐẦU XUÂN 🧧</h1>
-    <div id="status">Đang kiểm tra quyền bốc...</div>
+    <div id="status">Chào mừng bạn bốc lì xì Lan Anh!</div>
     <div class="grid" id="main-grid"></div>
 
     <div class="overlay" id="nameForm">
         <div class="win-box">
             <h2 style="margin:0">🧧 NHẬP TÊN 🧧</h2>
-            <p style="color: #666; font-size: 0.9rem;">Để Lan Anh biết ai nhận lộc nha!</p>
+            <p style="color: #666; font-size: 0.9rem;">Nhập đúng tên để nhận lộc nha!</p>
             <input type="text" id="userName" placeholder="Tên của bạn là...">
-            <button onclick="confirmName()">XÁC NHẬN & BỐC</button>
+            <button onclick="confirmName()">BẮT ĐẦU BỐC</button>
         </div>
     </div>
 
-    <div class="overlay" id="result">
+    <div class="overlay" id="result" style="display: none;">
         <div class="win-box">
             <h2 style="margin:0">CHÚC MỪNG</h2>
-            <p id="picked-name" style="color: #333; font-weight: bold;"></p>
+            <p id="picked-name" style="color: #333; font-weight: bold; margin: 10px 0;"></p>
             <h1 id="amount" style="font-size: 4rem; margin: 10px 0;">0k</h1>
-            <p id="msg-status" style="font-size: 0.8rem; color: #888;">Đang báo về cho Lan Anh...</p>
-            <button onclick="location.reload()">CẢM ƠN❤️</button>
+            <p id="msg-status" style="font-size: 0.8rem; color: #888;">Lan Anh đang nhận thông báo...</p>
+            <button onclick="location.reload()">ĐÓNG</button>
         </div>
     </div>
 
@@ -66,35 +66,31 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const grid = document.getElementById('main-grid');
-        let userIP = "";
         let currentUser = "";
 
-        async function init() {
-            try {
-                const res = await fetch('https://api.ipify.org?format=json');
-                const data = await res.json();
-                userIP = data.ip.replace(/\./g, '_');
+        // Hàm xác nhận tên và kiểm tra trùng
+        window.confirmName = async () => {
+            const rawName = document.getElementById('userName').value.trim();
+            if (rawName.length < 2) return alert("Vui lòng nhập tên thật!");
+            
+            // Chuẩn hóa tên: xóa dấu, viết thường để tránh lách luật (Ví dụ: "Lan Anh" và "lan anh")
+            const safeName = rawName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_");
 
-                const snap = await get(ref(db, 'used_ips/' + userIP));
+            try {
+                const snap = await get(ref(db, 'used_names/' + safeName));
                 if (snap.exists()) {
                     const info = snap.val();
-                    document.body.innerHTML = `<h1 style="margin-top:100px">🧧 HẸN GẶP LẠI 🧧</h1><p>Bạn (${info.name}) đã bốc ${info.amount}k rồi nha!</p>`;
+                    alert(`Tên "${rawName}" đã bốc ${info.amount}k rồi! Vui lòng không bốc lại nha.`);
+                    location.reload();
                 } else {
-                    document.getElementById('nameForm').style.display = 'flex';
-                    document.getElementById('status').innerText = "Mời bạn chọn 1 bao lì xì!";
+                    currentUser = rawName;
+                    document.getElementById('nameForm').style.display = 'none';
+                    document.getElementById('status').innerText = "Mời " + currentUser + " chọn 1 bao lì xì!";
                 }
-            } catch (e) { document.getElementById('nameForm').style.display = 'flex'; }
-        }
-
-        init();
-
-        window.confirmName = () => {
-            const n = document.getElementById('userName').value.trim();
-            if (n.length < 2) return alert("Nhập tên thật nha!");
-            currentUser = n;
-            document.getElementById('nameForm').style.display = 'none';
+            } catch (e) { alert("Lỗi kết nối!"); }
         };
 
+        // Hiển thị bao lì xì
         onValue(ref(db, 'lixi_data'), (snap) => {
             const data = snap.val();
             grid.innerHTML = '';
@@ -110,12 +106,15 @@
         });
 
         async function pick(index, val) {
-            if (!currentUser || !userIP) return;
-            if (confirm(`Bốc bao này nhé?`)) {
+            if (!currentUser) return;
+            const safeName = currentUser.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_");
+            
+            if (confirm(`Bạn chắc chắn bốc bao này chứ?`)) {
                 try {
                     const up = {};
                     up[`lixi_data/${index}`] = { status: 'opened', user: currentUser };
-                    up[`used_ips/${userIP}`] = { name: currentUser, amount: val };
+                    up[`used_names/${safeName}`] = { name: currentUser, amount: val, time: new Date().toLocaleString() };
+                    
                     await update(ref(db), up);
 
                     document.getElementById('picked-name').innerText = "Chúc mừng " + currentUser;
@@ -125,10 +124,9 @@
 
                     const msg = `🧧 LÌ XÌ MỚI! 🧧\n👤 Người nhận: ${currentUser}\n💰 Số tiền: ${val}.000đ`;
                     fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(msg)}`);
-                } catch (e) { alert("Lỗi: " + e.message); }
+                } catch (e) { alert("Lỗi bốc lì xì!"); }
             }
         }
     </script>
 </body>
 </html>
-
