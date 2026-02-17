@@ -16,10 +16,17 @@
         }
         .lixi:hover { transform: translateY(-10px) rotate(3deg); background: #e62e2e; }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; padding: 20px; box-sizing: border-box; }
-        .win-box { background: white; color: #d32f2f; padding: 30px; border-radius: 20px; border: 5px solid var(--gold); width: 100%; max-width: 320px; text-align: center; }
-        input#userName { width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 1.1rem; text-align: center; font-weight: bold; }
-        button { padding: 12px 20px; cursor: pointer; background: var(--gold); border: none; font-weight: bold; border-radius: 10px; width: 100%; font-size: 1.1rem; color: #8b0000; box-shadow: 0 4px 0 #b8860b; }
+        .win-box { background: white; color: #d32f2f; padding: 25px; border-radius: 20px; border: 5px solid var(--gold); width: 100%; max-width: 350px; text-align: center; overflow-y: auto; max-height: 90vh; }
+        
+        h2 { margin-top: 0; color: #ce1f1f; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 1rem; text-align: center; font-weight: bold; color: #333; }
+        input:focus { border-color: var(--red); outline: none; }
+        
+        button { padding: 12px 20px; cursor: pointer; background: var(--gold); border: none; font-weight: bold; border-radius: 10px; width: 100%; font-size: 1.1rem; color: #8b0000; box-shadow: 0 4px 0 #b8860b; margin-top: 10px; }
         button:active { transform: translateY(2px); box-shadow: none; }
+        
+        .bank-info { display: none; margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 15px; }
+        #amount { font-size: 3.5rem; margin: 10px 0; color: #ce1f1f; }
     </style>
 </head>
 <body>
@@ -30,8 +37,8 @@
 
     <div class="overlay" id="nameForm">
         <div class="win-box">
-            <h2 style="margin:0">🧧 NHẬP TÊN 🧧</h2>
-            <p style="color: #666; font-size: 0.9rem;">Nhập đúng tên để nhận lộc từ Hùng nha!</p>
+            <h2>🧧 NHẬP TÊN</h2>
+            <p style="color: #666;">Nhập tên để Hùng biết ai nhận lộc nhé!</p>
             <input type="text" id="userName" placeholder="Tên của bạn là...">
             <button onclick="confirmName()">BẮT ĐẦU BỐC</button>
         </div>
@@ -39,11 +46,21 @@
 
     <div class="overlay" id="result" style="display: none;">
         <div class="win-box">
-            <h2 style="margin:0">CHÚC MỪNG</h2>
-            <p id="picked-name" style="color: #333; font-weight: bold; margin: 10px 0;"></p>
-            <h1 id="amount" style="font-size: 4rem; margin: 10px 0;">0k</h1>
-            <p id="msg-status" style="font-size: 0.8rem; color: #888;">Hùng đang nhận thông báo...</p>
-            <button onclick="location.reload()">ĐÓNG</button>
+            <div id="congrats-part">
+                <h2>CHÚC MỪNG</h2>
+                <p id="picked-name" style="color: #333; font-weight: bold;"></p>
+                <h1 id="amount">0k</h1>
+                <button onclick="showBankForm()">NHẬP THÔNG TIN NHẬN TIỀN</button>
+            </div>
+
+            <div id="bank-part" class="bank-info">
+                <h3>🏦 THÔNG TIN NHẬN TIỀN</h3>
+                <input type="text" id="bankName" placeholder="Tên ngân hàng (VD: VCB, MB...)">
+                <input type="text" id="bankAcc" placeholder="Số tài khoản">
+                <input type="text" id="bankUser" placeholder="Tên chủ tài khoản">
+                <button id="btnSendAll" onclick="sendAllInfo()">GỬI CHO HÙNG & KẾT THÚC</button>
+                <p id="final-msg" style="font-size: 0.8rem; color: #888; margin-top: 10px;"></p>
+            </div>
         </div>
     </div>
 
@@ -68,47 +85,33 @@
         const db = getDatabase(app);
         const grid = document.getElementById('main-grid');
         let currentUser = "";
+        let currentAmount = 0;
 
-        // Hàm chuẩn hóa tên để kiểm tra trùng chính xác
         function getSafeName(name) {
-            return name.toLowerCase()
-                       .normalize("NFD")
-                       .replace(/[\u0300-\u036f]/g, "") // Bỏ dấu tiếng Việt
-                       .replace(/\s+/g, "_"); // Thay khoảng trắng bằng dấu gạch dưới
+            return name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_");
         }
 
-        // Xác nhận tên
         window.confirmName = async () => {
             const rawName = document.getElementById('userName').value.trim();
             if (rawName.length < 2) return alert("Vui lòng nhập tên thật!");
-            
             const safeName = getSafeName(rawName);
-
             try {
                 const snap = await get(ref(db, 'used_names/' + safeName));
                 if (snap.exists()) {
-                    const info = snap.val();
-                    alert(`Tên "${rawName}" đã bốc ${info.amount}k rồi! Mỗi người chỉ được bốc 1 lần thôi nhé.`);
+                    alert(`Tên "${rawName}" đã bốc rồi! Mỗi người chỉ 1 lần nha.`);
                     location.reload();
                 } else {
                     currentUser = rawName;
                     document.getElementById('nameForm').style.display = 'none';
-                    document.getElementById('status').innerText = "Mời " + currentUser + " chọn 1 bao lì xì!";
+                    document.getElementById('status').innerText = "Mời " + currentUser + " chọn lì xì!";
                 }
-            } catch (e) { 
-                console.error(e);
-                alert("Lỗi kết nối Firebase!"); 
-            }
+            } catch (e) { alert("Lỗi kết nối!"); }
         };
 
-        // Lấy danh sách bao lì xì khả dụng
         onValue(ref(db, 'lixi_data'), (snap) => {
             const data = snap.val();
             grid.innerHTML = '';
-            if (!data) {
-                grid.innerHTML = 'Hết lì xì rồi, hẹn bạn năm sau nhé!';
-                return;
-            }
+            if (!data) return;
             data.forEach((item, index) => {
                 if (item.status === 'available') {
                     const el = document.createElement('div');
@@ -119,44 +122,57 @@
             });
         });
 
-        // Xử lý bốc lì xì
         async function pick(index, val) {
             if (!currentUser) return;
-            const safeName = getSafeName(currentUser);
-            
-            if (confirm(`Bạn chắc chắn bốc bao này chứ?`)) {
+            if (confirm(`Bốc bao này nhé?`)) {
                 try {
-                    // Kiểm tra lại một lần nữa trước khi bốc để tránh việc 2 người dùng chung 1 tên bốc cùng lúc
-                    const checkSnap = await get(ref(db, 'used_names/' + safeName));
-                    if (checkSnap.exists()) {
-                        alert("Tên này vừa có người bốc rồi!");
-                        location.reload();
-                        return;
-                    }
-
+                    currentAmount = val;
+                    const safeName = getSafeName(currentUser);
                     const up = {};
                     up[`lixi_data/${index}`] = { status: 'opened', user: currentUser };
-                    up[`used_names/${safeName}`] = { name: currentUser, amount: val, time: new Date().toLocaleString() };
-                    
+                    up[`used_names/${safeName}`] = { name: currentUser, amount: val };
                     await update(ref(db), up);
 
-                    // Hiển thị kết quả
-                    document.getElementById('picked-name').innerText = "Chúc mừng " + currentUser;
+                    document.getElementById('picked-name').innerText = currentUser;
                     document.getElementById('amount').innerText = val + "k";
                     document.getElementById('result').style.display = 'flex';
-                    
-                    // Bắn pháo hoa
                     confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-
-                    // Gửi Telegram
-                    const msg = `🧧 LÌ XÌ MỚI! 🧧\n👤 Người nhận: ${currentUser}\n💰 Số tiền: ${val}.000đ`;
-                    fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(msg)}`);
-                    
-                } catch (e) { 
-                    alert("Lỗi bốc lì xì, vui lòng thử lại!"); 
-                }
+                } catch (e) { alert("Lỗi!"); }
             }
         }
+
+        window.showBankForm = () => {
+            document.getElementById('congrats-part').style.display = 'none';
+            document.getElementById('bank-part').style.display = 'block';
+        };
+
+        window.sendAllInfo = async () => {
+            const bank = document.getElementById('bankName').value.trim();
+            const acc = document.getElementById('bankAcc').value.trim();
+            const user = document.getElementById('bankUser').value.trim();
+
+            if (!bank || !acc || !user) return alert("Vui lòng nhập đủ thông tin để Hùng chuyển khoản nha!");
+
+            document.getElementById('btnSendAll').disabled = true;
+            document.getElementById('btnSendAll').innerText = "ĐANG GỬI...";
+
+            const msg = `🧧 THÔNG TIN LÌ XÌ 🧧\n` +
+                        `👤 Người bốc: ${currentUser}\n` +
+                        `💰 Số tiền: ${currentAmount}.000đ\n` +
+                        `--------------------------\n` +
+                        `🏦 Ngân hàng: ${bank}\n` +
+                        `💳 Số tài khoản: ${acc}\n` +
+                        `👤 Chủ tài khoản: ${user}`;
+
+            try {
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(msg)}`);
+                alert("Đã gửi thông tin thành công! Chờ Hùng tinh tinh nhé.");
+                location.reload();
+            } catch (e) {
+                alert("Gửi tin nhắn lỗi, nhưng đừng lo, Hùng đã lưu tên bạn rồi!");
+                location.reload();
+            }
+        };
     </script>
 </body>
 </html>
