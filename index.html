@@ -2,38 +2,53 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Thiết Lập Lì Xì - Admin</title>
+    <title>Bốc Lì Xì May Mắn</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        :root { --red: #d32f2f; --gold: #ffd700; }
-        body { background: #8b0000; color: var(--gold); font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; margin: 0; }
-        .box { background: var(--red); padding: 20px; border-radius: 15px; border: 2px solid var(--gold); display: inline-block; width: 90%; max-width: 350px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); margin-top: 20px; }
-        .row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; font-size: 1.1rem; }
-        input { width: 70px; padding: 8px; border-radius: 5px; border: none; text-align: center; font-weight: bold; }
-        button { background: var(--gold); color: #8b0000; border: none; padding: 15px 30px; font-weight: bold; border-radius: 25px; cursor: pointer; font-size: 1.1rem; margin-top: 20px; width: 100%; }
-        #link-share { display: none; margin-top: 30px; background: #fff; color: #333; padding: 20px; border-radius: 10px; word-break: break-all; border: 3px dashed var(--red); }
-        a { color: #d32f2f; font-weight: bold; text-decoration: underline; }
+        :root { --red: #ce1f1f; --gold: #ffd700; }
+        body { background: #8b0000; color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 20px; overflow-x: hidden; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; max-width: 600px; margin: 20px auto; }
+        .lixi { 
+            aspect-ratio: 2/3; background: var(--red); border: 2px solid var(--gold); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; font-size: 40px; cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4); transition: 0.3s;
+        }
+        .lixi:hover { transform: translateY(-10px) rotate(3deg); background: #e62e2e; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; padding: 20px; box-sizing: border-box; }
+        .win-box { background: white; color: #d32f2f; padding: 30px; border-radius: 20px; border: 5px solid var(--gold); width: 100%; max-width: 320px; position: relative; }
+        input#userName { width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 1rem; text-align: center; outline: none; }
+        input#userName:focus { border-color: var(--red); }
+        button { padding: 12px 20px; cursor: pointer; background: var(--gold); border: none; font-weight: bold; border-radius: 10px; width: 100%; font-size: 1.1rem; color: #8b0000; box-shadow: 0 4px 0 #b8860b; }
+        button:active { transform: translateY(2px); box-shadow: none; }
     </style>
 </head>
 <body>
-    <h1>🧧 THIẾT LẬP LÌ XÌ 🧧</h1>
-    <div class="box">
-        <div class="row">Mệnh giá 10k: <input type="number" id="v10" value="5"></div>
-        <div class="row">Mệnh giá 20k: <input type="number" id="v20" value="3"></div>
-        <div class="row">Mệnh giá 50k: <input type="number" id="v50" value="2"></div>
-        <div class="row">Mệnh giá 100k: <input type="number" id="v100" value="1"></div>
-        <button id="btnCreate">BẮT ĐẦU TẠO KHO</button>
+    <h1>🧧 HÁI LỘC ĐẦU XUÂN 🧧</h1>
+    <div class="grid" id="main-grid">Đang tải bao lì xì...</div>
+
+    <div class="overlay" id="nameForm" style="display: flex;">
+        <div class="win-box">
+            <h2 style="margin:0">🧧 Nhập tên 🧧</h2>
+            <p style="color: #666;">Để mình biết ai đã bốc nhé!</p>
+            <input type="text" id="userName" placeholder="Nhập tên của bạn...">
+            <button onclick="confirmName()">BẮT ĐẦU CHỌN</button>
+        </div>
     </div>
 
-    <div id="link-share">
-        <p>✨ <b>Thành công!</b> ✨</p>
-        <p>Gửi link này cho bạn bè bốc:</p>
-        <a id="url" href="#" target="_blank">Đang lấy link...</a>
+    <div class="overlay" id="result">
+        <div class="win-box">
+            <h2 style="margin:0">CHÚC MỪNG</h2>
+            <p id="picked-name" style="color: #333; font-weight: bold;"></p>
+            <h1 id="amount" style="font-size: 4rem; margin: 10px 0; text-shadow: 2px 2px #ffcccb;">0k</h1>
+            <p id="msg-status" style="font-size: 0.8rem; color: #888;">Đang báo về Telegram...</p>
+            <button onclick="location.reload()">CẢM ƠN</button>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBVp52h5FcZ35e19NqhbV0aWw2-rMrYgDQ",
@@ -45,30 +60,67 @@
             appId: "1:118236643323:web:aca32c735fb2d9f810155e"
         };
 
+        // --- ĐIỀN THÔNG TIN CỦA BẠN VÀO ĐÂY ---
+        const TELEGRAM_TOKEN = '8506964729:AAFOdrKaq5TUMiqI7OWfHKpNrwY4qZoynVo'; 
+        const TELEGRAM_CHAT_ID = 'ĐIỀN_ID_LẤY_TỪ_USERINFOBOT_VÀO_ĐÂY'; 
+
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const grid = document.getElementById('main-grid');
+        let picking = false;
+        let currentUser = "";
 
-        document.getElementById('btnCreate').onclick = async () => {
-            let pool = [];
-            [10, 20, 50, 100].forEach(v => {
-                let count = parseInt(document.getElementById('v' + v).value) || 0;
-                for(let i = 0; i < count; i++) {
-                    pool.push({ val: v, status: 'available' });
+        window.confirmName = function() {
+            const name = document.getElementById('userName').value.trim();
+            if (name.length < 2) return alert("Vui lòng nhập tên thật của bạn!");
+            currentUser = name;
+            document.getElementById('nameForm').style.display = 'none';
+        }
+
+        onValue(ref(db, 'lixi_data'), (snap) => {
+            const data = snap.val();
+            grid.innerHTML = '';
+            if (!data) { grid.innerHTML = 'Kho lì xì đang trống!'; return; }
+
+            data.forEach((item, index) => {
+                if (item && item.status === 'available') {
+                    const card = document.createElement('div');
+                    card.className = 'lixi';
+                    card.innerHTML = '🧧';
+                    card.onclick = () => pick(index, item.val);
+                    grid.appendChild(card);
                 }
             });
+            if (grid.innerHTML === '') grid.innerHTML = 'Hết lì xì rồi! Hẹn bạn năm sau nhé.';
+        });
 
-            if (pool.length === 0) return alert("Hãy thêm ít nhất 1 bao!");
-            pool.sort(() => Math.random() - 0.5);
+        async function sendTelegram(name, amount) {
+            const message = `🧧 LÌ XÌ MỚI 🧧\n👤 Người nhận: ${name}\n💰 Số tiền: ${amount}.000đ`;
+            const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(message)}`;
+            try { 
+                await fetch(url);
+                document.getElementById('msg-status').innerText = "Đã báo cho chủ nhà!";
+            } catch (e) { console.error(e); }
+        }
 
-            try {
-                await set(ref(db, 'lixi_data'), pool);
-                const userLink = window.location.href.split('?')[0].split('#')[0].replace('index.html', '') + 'user.html';
-                document.getElementById('link-share').style.display = 'block';
-                document.getElementById('url').innerText = userLink;
-                document.getElementById('url').href = userLink;
-                alert("Kho lì xì đã sẵn sàng!");
-            } catch (e) { alert("Lỗi Firebase: " + e.message); }
-        };
+        function firework() {
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#ff0000', '#ffd700', '#ffffff'] });
+        }
+
+        async function pick(index, val) {
+            if (picking || !currentUser) return;
+            if (confirm(`Bạn chắc chắn bốc bao này chứ?`)) {
+                picking = true;
+                try {
+                    await update(ref(db, `lixi_data/${index}`), { status: 'opened', user: currentUser });
+                    document.getElementById('picked-name').innerText = currentUser;
+                    document.getElementById('amount').innerText = val + "k";
+                    document.getElementById('result').style.display = 'flex';
+                    firework(); // Bắn pháo hoa
+                    sendTelegram(currentUser, val);
+                } catch (e) { alert("Lỗi: " + e.message); picking = false; }
+            }
+        }
     </script>
 </body>
 </html>
