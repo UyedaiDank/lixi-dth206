@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Bốc Lì Xì</title>
+    <style>
+        body { background: #8b0000; color: white; text-align: center; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; padding: 20px; }
+        .lixi { 
+            height: 150px; background: #ce1f1f; border: 2px solid gold; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; font-size: 40px; cursor: pointer;
+        }
+        .lixi.sold-out { opacity: 0; pointer-events: none; } /* Biến mất hoàn toàn */
+        .result-overlay { position: fixed; top: 0; background: rgba(0,0,0,0.9); width: 100%; height: 100%; display: none; justify-content: center; align-items: center; flex-direction: column; }
+    </style>
+</head>
+<body>
+    <h1>🧧 CHỌN LÌ XÌ MAY MẮN 🧧</h1>
+    <div class="grid" id="container"> Đang tải dữ liệu... </div>
+
+    <div class="result-overlay" id="overlay">
+        <h2 id="win-text"></h2>
+        <button onclick="location.reload()">Đóng</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // --- DÁN CÙNG CONFIG NHƯ FILE ADMIN ---
+        const firebaseConfig = { ... }; 
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        onValue(ref(db, 'lixi_pool'), (snapshot) => {
+            const data = snapshot.val();
+            const container = document.getElementById('container');
+            container.innerHTML = '';
+            
+            data.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'lixi' + (item.status === 'opened' ? ' sold-out' : '');
+                card.innerHTML = '🧧';
+                card.onclick = () => pick(index, item.val);
+                container.appendChild(card);
+            });
+        });
+
+        function pick(index, value) {
+            if(confirm("Bạn có chắc chắn bốc bao này?")) {
+                update(ref(db, `lixi_pool/${index}`), { status: 'opened' }).then(() => {
+                    document.getElementById('overlay').style.display = 'flex';
+                    document.getElementById('win-text').innerText = "Bạn nhận được " + value + "k!";
+                });
+            }
+        }
+    </script>
+</body>
+</html>
