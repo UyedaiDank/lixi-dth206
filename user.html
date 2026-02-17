@@ -18,19 +18,20 @@
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; padding: 20px; box-sizing: border-box; }
         .win-box { background: white; color: #d32f2f; padding: 30px; border-radius: 20px; border: 5px solid var(--gold); width: 100%; max-width: 320px; text-align: center; }
         input#userName { width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 1.1rem; text-align: center; font-weight: bold; }
-        button { padding: 12px 20px; cursor: pointer; background: var(--gold); border: none; font-weight: bold; border-radius: 10px; width: 100%; font-size: 1.1rem; color: #8b0000; }
+        button { padding: 12px 20px; cursor: pointer; background: var(--gold); border: none; font-weight: bold; border-radius: 10px; width: 100%; font-size: 1.1rem; color: #8b0000; box-shadow: 0 4px 0 #b8860b; }
+        button:active { transform: translateY(2px); box-shadow: none; }
     </style>
 </head>
 <body>
 
     <h1>🧧 HÁI LỘC ĐẦU XUÂN 🧧</h1>
     <div id="status">Chào mừng bạn bốc lì xì Đinh Tuấn Hùng!</div>
-    <div class="grid" id="main-grid"></div>
+    <div class="grid" id="main-grid">Đang tải bao lì xì...</div>
 
     <div class="overlay" id="nameForm">
         <div class="win-box">
             <h2 style="margin:0">🧧 NHẬP TÊN 🧧</h2>
-            <p style="color: #666; font-size: 0.9rem;">Nhập đúng tên để nhận lộc nha!</p>
+            <p style="color: #666; font-size: 0.9rem;">Nhập đúng tên để nhận lộc từ Hùng nha!</p>
             <input type="text" id="userName" placeholder="Tên của bạn là...">
             <button onclick="confirmName()">BẮT ĐẦU BỐC</button>
         </div>
@@ -41,7 +42,7 @@
             <h2 style="margin:0">CHÚC MỪNG</h2>
             <p id="picked-name" style="color: #333; font-weight: bold; margin: 10px 0;"></p>
             <h1 id="amount" style="font-size: 4rem; margin: 10px 0;">0k</h1>
-            <p id="msg-status" style="font-size: 0.8rem; color: #888;">Đinh Tuấn Hùng đang nhận thông báo...</p>
+            <p id="msg-status" style="font-size: 0.8rem; color: #888;">Hùng đang nhận thông báo...</p>
             <button onclick="location.reload()">ĐÓNG</button>
         </div>
     </div>
@@ -68,33 +69,46 @@
         const grid = document.getElementById('main-grid');
         let currentUser = "";
 
-        // Hàm xác nhận tên và kiểm tra trùng
+        // Hàm chuẩn hóa tên để kiểm tra trùng chính xác
+        function getSafeName(name) {
+            return name.toLowerCase()
+                       .normalize("NFD")
+                       .replace(/[\u0300-\u036f]/g, "") // Bỏ dấu tiếng Việt
+                       .replace(/\s+/g, "_"); // Thay khoảng trắng bằng dấu gạch dưới
+        }
+
+        // Xác nhận tên
         window.confirmName = async () => {
             const rawName = document.getElementById('userName').value.trim();
             if (rawName.length < 2) return alert("Vui lòng nhập tên thật!");
             
-            // Chuẩn hóa tên: xóa dấu, viết thường để tránh lách luật (Ví dụ: "Đinh Tuấn Hùng" và "Đinh Tuấn Hùng")
-            const safeName = rawName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_");
+            const safeName = getSafeName(rawName);
 
             try {
                 const snap = await get(ref(db, 'used_names/' + safeName));
                 if (snap.exists()) {
                     const info = snap.val();
-                    alert(`Tên "${rawName}" đã bốc ${info.amount}k rồi! Vui lòng không bốc lại nha.`);
+                    alert(`Tên "${rawName}" đã bốc ${info.amount}k rồi! Mỗi người chỉ được bốc 1 lần thôi nhé.`);
                     location.reload();
                 } else {
                     currentUser = rawName;
                     document.getElementById('nameForm').style.display = 'none';
                     document.getElementById('status').innerText = "Mời " + currentUser + " chọn 1 bao lì xì!";
                 }
-            } catch (e) { alert("Lỗi kết nối!"); }
+            } catch (e) { 
+                console.error(e);
+                alert("Lỗi kết nối Firebase!"); 
+            }
         };
 
-        // Hiển thị bao lì xì
+        // Lấy danh sách bao lì xì khả dụng
         onValue(ref(db, 'lixi_data'), (snap) => {
             const data = snap.val();
             grid.innerHTML = '';
-            if (!data) return;
+            if (!data) {
+                grid.innerHTML = 'Hết lì xì rồi, hẹn bạn năm sau nhé!';
+                return;
+            }
             data.forEach((item, index) => {
                 if (item.status === 'available') {
                     const el = document.createElement('div');
@@ -105,29 +119,44 @@
             });
         });
 
+        // Xử lý bốc lì xì
         async function pick(index, val) {
             if (!currentUser) return;
-            const safeName = currentUser.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_");
+            const safeName = getSafeName(currentUser);
             
             if (confirm(`Bạn chắc chắn bốc bao này chứ?`)) {
                 try {
+                    // Kiểm tra lại một lần nữa trước khi bốc để tránh việc 2 người dùng chung 1 tên bốc cùng lúc
+                    const checkSnap = await get(ref(db, 'used_names/' + safeName));
+                    if (checkSnap.exists()) {
+                        alert("Tên này vừa có người bốc rồi!");
+                        location.reload();
+                        return;
+                    }
+
                     const up = {};
                     up[`lixi_data/${index}`] = { status: 'opened', user: currentUser };
                     up[`used_names/${safeName}`] = { name: currentUser, amount: val, time: new Date().toLocaleString() };
                     
                     await update(ref(db), up);
 
+                    // Hiển thị kết quả
                     document.getElementById('picked-name').innerText = "Chúc mừng " + currentUser;
                     document.getElementById('amount').innerText = val + "k";
                     document.getElementById('result').style.display = 'flex';
+                    
+                    // Bắn pháo hoa
                     confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
 
+                    // Gửi Telegram
                     const msg = `🧧 LÌ XÌ MỚI! 🧧\n👤 Người nhận: ${currentUser}\n💰 Số tiền: ${val}.000đ`;
                     fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(msg)}`);
-                } catch (e) { alert("Lỗi bốc lì xì!"); }
+                    
+                } catch (e) { 
+                    alert("Lỗi bốc lì xì, vui lòng thử lại!"); 
+                }
             }
         }
     </script>
 </body>
 </html>
-
