@@ -7,7 +7,9 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root { --red: #ce1f1f; --gold: #ffd700; }
-        body { background: #8b0000; color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 20px; overflow-x: hidden; }
+        body { background: #8b0000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; margin: 0; padding: 20px; overflow-x: hidden; }
+        
+        /* Lưới bao lì xì */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; max-width: 600px; margin: 20px auto; }
         .lixi { 
             aspect-ratio: 2/3; background: var(--red); border: 2px solid var(--gold); border-radius: 10px;
@@ -15,32 +17,45 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.4); transition: 0.3s;
         }
         .lixi:hover { transform: translateY(-10px) rotate(3deg); background: #e62e2e; }
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; padding: 20px; box-sizing: border-box; }
-        .win-box { background: white; color: #d32f2f; padding: 30px; border-radius: 20px; border: 5px solid var(--gold); width: 100%; max-width: 320px; position: relative; }
-        input#userName { width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 1rem; text-align: center; outline: none; }
-        input#userName:focus { border-color: var(--red); }
-        button { padding: 12px 20px; cursor: pointer; background: var(--gold); border: none; font-weight: bold; border-radius: 10px; width: 100%; font-size: 1.1rem; color: #8b0000; box-shadow: 0 4px 0 #b8860b; }
+
+        /* Lớp phủ màn hình */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; padding: 20px; box-sizing: border-box; }
+        
+        /* Hộp thông báo */
+        .win-box { background: white; color: #d32f2f; padding: 30px; border-radius: 20px; border: 5px solid var(--gold); width: 100%; max-width: 320px; text-align: center; }
+        
+        input#userName { 
+            width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #ddd; border-radius: 10px; 
+            box-sizing: border-box; font-size: 1.1rem; text-align: center; color: #333; font-weight: bold;
+        }
+        
+        button { 
+            padding: 12px 20px; cursor: pointer; background: var(--gold); border: none; 
+            font-weight: bold; border-radius: 10px; width: 100%; font-size: 1.1rem; 
+            color: #8b0000; box-shadow: 0 4px 0 #b8860b; 
+        }
         button:active { transform: translateY(2px); box-shadow: none; }
     </style>
 </head>
 <body>
+
     <h1>🧧 HÁI LỘC ĐẦU XUÂN 🧧</h1>
     <div class="grid" id="main-grid">Đang tải bao lì xì...</div>
 
     <div class="overlay" id="nameForm" style="display: flex;">
         <div class="win-box">
-            <h2 style="margin:0">🧧 Nhập tên 🧧</h2>
-            <p style="color: #666;">Để mình biết ai đã bốc nhé!</p>
-            <input type="text" id="userName" placeholder="Nhập tên của bạn...">
-            <button onclick="confirmName()">BẮT ĐẦU CHỌN</button>
+            <h2 style="margin:0">🧧 NHẬP TÊN 🧧</h2>
+            <p style="color: #666; font-size: 0.9rem;">Vui lòng cho biết tên của bạn để bốc lì xì nhé!</p>
+            <input type="text" id="userName" placeholder="Ví dụ: Minh Anh...">
+            <button onclick="confirmName()">XÁC NHẬN & BẮT ĐẦU</button>
         </div>
     </div>
 
     <div class="overlay" id="result">
         <div class="win-box">
             <h2 style="margin:0">CHÚC MỪNG</h2>
-            <p id="picked-name" style="color: #333; font-weight: bold;"></p>
-            <h1 id="amount" style="font-size: 4rem; margin: 10px 0; text-shadow: 2px 2px #ffcccb;">0k</h1>
+            <p id="picked-name" style="color: #333; font-weight: bold; margin: 10px 0;"></p>
+            <h1 id="amount" style="font-size: 4rem; margin: 10px 0;">0k</h1>
             <p id="msg-status" style="font-size: 0.8rem; color: #888;">Đang báo về Telegram...</p>
             <button onclick="location.reload()">CẢM ƠN</button>
         </div>
@@ -60,9 +75,8 @@
             appId: "1:118236643323:web:aca32c735fb2d9f810155e"
         };
 
-        // --- ĐIỀN THÔNG TIN CỦA BẠN VÀO ĐÂY ---
         const TELEGRAM_TOKEN = '8506964729:AAFOdrKaq5TUMiqI7OWfHKpNrwY4qZoynVo'; 
-        const TELEGRAM_CHAT_ID = 'ĐIỀN_ID_LẤY_TỪ_USERINFOBOT_VÀO_ĐÂY'; 
+        const TELEGRAM_CHAT_ID = 'ĐIỀN_ID_CHAT_CỦA_BẠN'; // Bạn phải điền ID này thì mới nhận được tin nhắn nhé!
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
@@ -70,13 +84,18 @@
         let picking = false;
         let currentUser = "";
 
+        // Hàm xử lý khi nhấn Xác nhận tên
         window.confirmName = function() {
-            const name = document.getElementById('userName').value.trim();
-            if (name.length < 2) return alert("Vui lòng nhập tên thật của bạn!");
-            currentUser = name;
+            const inputName = document.getElementById('userName').value.trim();
+            if (inputName.length < 2) {
+                alert("Vui lòng nhập tên từ 2 ký tự trở lên!");
+                return;
+            }
+            currentUser = inputName;
             document.getElementById('nameForm').style.display = 'none';
         }
 
+        // Lấy dữ liệu từ Firebase
         onValue(ref(db, 'lixi_data'), (snap) => {
             const data = snap.val();
             grid.innerHTML = '';
@@ -91,7 +110,7 @@
                     grid.appendChild(card);
                 }
             });
-            if (grid.innerHTML === '') grid.innerHTML = 'Hết lì xì rồi! Hẹn bạn năm sau nhé.';
+            if (grid.innerHTML === '') grid.innerHTML = 'Hết lì xì rồi!';
         });
 
         async function sendTelegram(name, amount) {
@@ -99,24 +118,26 @@
             const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(message)}`;
             try { 
                 await fetch(url);
-                document.getElementById('msg-status').innerText = "Đã báo cho chủ nhà!";
-            } catch (e) { console.error(e); }
-        }
-
-        function firework() {
-            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#ff0000', '#ffd700', '#ffffff'] });
+                document.getElementById('msg-status').innerText = "Đã báo thành công!";
+            } catch (e) { document.getElementById('msg-status').innerText = "Lỗi gửi báo cáo!"; }
         }
 
         async function pick(index, val) {
             if (picking || !currentUser) return;
-            if (confirm(`Bạn chắc chắn bốc bao này chứ?`)) {
+            if (confirm(`Bạn [${currentUser}] chắc chắn bốc bao này chứ?`)) {
                 picking = true;
                 try {
-                    await update(ref(db, `lixi_data/${index}`), { status: 'opened', user: currentUser });
-                    document.getElementById('picked-name').innerText = currentUser;
+                    await update(ref(db, `lixi_data/${index}`), { 
+                        status: 'opened', 
+                        user: currentUser 
+                    });
+                    document.getElementById('picked-name').innerText = "Chúc mừng " + currentUser;
                     document.getElementById('amount').innerText = val + "k";
                     document.getElementById('result').style.display = 'flex';
-                    firework(); // Bắn pháo hoa
+                    
+                    // Hiệu ứng pháo hoa
+                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                    
                     sendTelegram(currentUser, val);
                 } catch (e) { alert("Lỗi: " + e.message); picking = false; }
             }
