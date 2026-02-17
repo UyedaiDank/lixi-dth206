@@ -6,38 +6,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --red: #d32f2f; --gold: #ffd700; }
-        body { background: #8b0000; color: var(--gold); font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; }
-        .box { background: var(--red); padding: 20px; border-radius: 15px; border: 2px solid var(--gold); display: inline-block; width: 100%; max-width: 350px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-        .row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; font-size: 1.2rem; }
-        input { width: 70px; padding: 8px; border-radius: 5px; border: none; text-align: center; font-weight: bold; font-size: 1rem; }
-        button { background: var(--gold); color: #8b0000; border: none; padding: 15px 30px; font-weight: bold; border-radius: 25px; cursor: pointer; font-size: 1.1rem; margin-top: 20px; transition: 0.3s; }
-        button:hover { transform: scale(1.05); background: white; }
+        body { background: #8b0000; color: var(--gold); font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; margin: 0; }
+        .box { background: var(--red); padding: 20px; border-radius: 15px; border: 2px solid var(--gold); display: inline-block; width: 90%; max-width: 350px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); margin-top: 20px; }
+        .row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; font-size: 1.1rem; }
+        input { width: 70px; padding: 8px; border-radius: 5px; border: none; text-align: center; font-weight: bold; }
+        button { background: var(--gold); color: #8b0000; border: none; padding: 15px 30px; font-weight: bold; border-radius: 25px; cursor: pointer; font-size: 1.1rem; margin-top: 20px; width: 100%; }
         #link-share { display: none; margin-top: 30px; background: #fff; color: #333; padding: 20px; border-radius: 10px; word-break: break-all; border: 3px dashed var(--red); }
-        a { color: #d32f2f; font-weight: bold; text-decoration: none; }
+        a { color: #d32f2f; font-weight: bold; text-decoration: underline; }
     </style>
 </head>
 <body>
-    <h1>🧧 THIẾT LẬP KHO LÌ XÌ</h1>
+    <h1>🧧 THIẾT LẬP LÌ XÌ 🧧</h1>
     <div class="box">
-        <div class="row">Mệnh giá 10k: <input type="number" id="v10" value="5" min="0"></div>
-        <div class="row">Mệnh giá 20k: <input type="number" id="v20" value="3" min="0"></div>
-        <div class="row">Mệnh giá 50k: <input type="number" id="v50" value="2" min="0"></div>
-        <div class="row">Mệnh giá 100k: <input type="number" id="v100" value="1" min="0"></div>
-        <button id="btnCreate">BẮT ĐẦU TẠO LÌ XÌ</button>
+        <div class="row">Mệnh giá 10k: <input type="number" id="v10" value="5"></div>
+        <div class="row">Mệnh giá 20k: <input type="number" id="v20" value="3"></div>
+        <div class="row">Mệnh giá 50k: <input type="number" id="v50" value="2"></div>
+        <div class="row">Mệnh giá 100k: <input type="number" id="v100" value="1"></div>
+        <button id="btnCreate">BẮT ĐẦU TẠO KHO</button>
     </div>
 
     <div id="link-share">
-        <p>✨ <b>Khởi tạo thành công!</b> ✨</p>
-        <p>Gửi link dưới đây cho bạn bè:</p>
+        <p>✨ <b>Thành công!</b> ✨</p>
+        <p>Gửi link này cho bạn bè bốc:</p>
         <a id="url" href="#" target="_blank">Đang lấy link...</a>
-        <p style="font-size: 0.8rem; color: #666; margin-top: 10px;">(Lưu ý: Chỉ gửi link này, không gửi link trang Admin)</p>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // Cấu hình Firebase của bạn
         const firebaseConfig = {
             apiKey: "AIzaSyBVp52h5FcZ35e19NqhbV0aWw2-rMrYgDQ",
             authDomain: "quan-ly-li-xi.firebaseapp.com",
@@ -60,29 +57,17 @@
                 }
             });
 
-            if (pool.length === 0) {
-                alert("Bạn cần thêm ít nhất 1 bao lì xì!");
-                return;
-            }
-
-            // Xáo trộn ngẫu nhiên
+            if (pool.length === 0) return alert("Hãy thêm ít nhất 1 bao!");
             pool.sort(() => Math.random() - 0.5);
 
             try {
                 await set(ref(db, 'lixi_data'), pool);
-                // Tạo link dẫn đến user.html dựa trên URL hiện tại
-                const currentUrl = window.location.href;
-                const userLink = currentUrl.substring(0, currentUrl.lastIndexOf("/")) + "/user.html";
-                
+                const userLink = window.location.href.split('?')[0].split('#')[0].replace('index.html', '') + 'user.html';
                 document.getElementById('link-share').style.display = 'block';
                 document.getElementById('url').innerText = userLink;
                 document.getElementById('url').href = userLink;
-                
                 alert("Kho lì xì đã sẵn sàng!");
-            } catch (e) {
-                console.error(e);
-                alert("Lỗi khi kết nối Firebase: " + e.message + "\nHãy kiểm tra lại Rules của bạn!");
-            }
+            } catch (e) { alert("Lỗi Firebase: " + e.message); }
         };
     </script>
 </body>
