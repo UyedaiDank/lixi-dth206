@@ -2,61 +2,67 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Thiết Lập Lì Xì</title>
+    <title>Thiết Lập Lì Xì - Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { background: #8b0000; color: gold; font-family: sans-serif; text-align: center; padding: 50px; }
-        .config-group { background: #d32f2f; padding: 20px; border-radius: 10px; display: inline-block; }
-        .row { margin: 10px 0; font-size: 1.2rem; }
-        button { padding: 10px 20px; cursor: pointer; background: gold; border: none; font-weight: bold; border-radius: 5px; }
-        #link-box { margin-top: 20px; display: none; background: white; color: black; padding: 15px; }
+        :root { --red: #d32f2f; --gold: #ffd700; }
+        body { background: #8b0000; color: var(--gold); font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; }
+        .box { background: var(--red); padding: 20px; border-radius: 15px; border: 2px solid var(--gold); display: inline-block; width: 100%; max-width: 350px; }
+        .row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; font-size: 1.2rem; }
+        input { width: 60px; padding: 5px; border-radius: 5px; border: none; text-align: center; font-weight: bold; }
+        button { background: var(--gold); color: #8b0000; border: none; padding: 12px 25px; font-weight: bold; border-radius: 25px; cursor: pointer; font-size: 1rem; margin-top: 20px; }
+        #link-share { display: none; margin-top: 20px; background: #fff; color: #333; padding: 15px; border-radius: 10px; word-break: break-all; }
     </style>
 </head>
 <body>
-    <h1>⚙️ THIẾT LẬP KHO LÌ XÌ</h1>
-    <div class="config-group" id="setup">
-        <div class="row">10k: <input type="number" id="v10" value="5"></div>
-        <div class="row">20k: <input type="number" id="v20" value="3"></div>
-        <div class="row">50k: <input type="number" id="v50" value="2"></div>
-        <div class="row">100k: <input type="number" id="v100" value="1"></div>
-        <button onclick="createGame()">TẠO LINK GỬI BẠN BÈ</button>
+    <h1>⚙️ THIẾT LẬP LÌ XÌ</h1>
+    <div class="box">
+        <div class="row">Tờ 10k: <input type="number" id="v10" value="5"></div>
+        <div class="row">Tờ 20k: <input type="number" id="v20" value="3"></div>
+        <div class="row">Tờ 50k: <input type="number" id="v50" value="2"></div>
+        <div class="row">Tờ 100k: <input type="number" id="v100" value="1"></div>
+        <button id="btnCreate">TẠO KHO LÌ XÌ & LẤY LINK</button>
     </div>
 
-    <div id="link-box">
-        <p>Gửi link này cho bạn bè:</p>
-        <strong id="final-link"></strong>
+    <div id="link-share">
+        <p><b>Thành công!</b> Gửi link này cho bạn bè:</p>
+        <a id="url" href="#" style="color: blue;">Đang tạo...</a>
     </div>
 
     <script type="module">
-        // --- DÁN FIREBASE CONFIG CỦA BẠN VÀO ĐÂY ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
-            apiKey: "AIza...",
-            databaseURL: "https://your-project-id.firebaseio.com",
-            projectId: "your-project-id",
+            apiKey: "AIzaSyBVp52h5FcZ35e19NqhbV0aWw2-rMrYgDQ",
+            authDomain: "quan-ly-li-xi.firebaseapp.com",
+            databaseURL: "https://quan-ly-li-xi-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "quan-ly-li-xi",
+            storageBucket: "quan-ly-li-xi.firebasestorage.app",
+            messagingSenderId: "118236643323",
+            appId: "1:118236643323:web:aca32c735fb2d9f810155e"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        window.createGame = function() {
+        document.getElementById('btnCreate').onclick = async () => {
             let pool = [];
             [10, 20, 50, 100].forEach(v => {
                 let count = document.getElementById('v'+v).value;
-                for(let i=0; i<count; i++) pool.push({val: v, status: 'available'});
+                for(let i=0; i<count; i++) pool.push({ val: v, status: 'available' });
             });
-            
-            // Xáo trộn ngẫu nhiên
             pool.sort(() => Math.random() - 0.5);
 
-            set(ref(db, 'lixi_pool'), pool).then(() => {
-                document.getElementById('setup').style.display = 'none';
-                document.getElementById('link-box').style.display = 'block';
-                // Link trỏ tới file user.html của bạn
-                document.getElementById('final-link').innerText = window.location.href.replace('admin.html', 'user.html');
-            });
-        }
+            try {
+                await set(ref(db, 'lixi_data'), pool);
+                const userLink = window.location.href.replace('index.html', '') + 'user.html';
+                document.getElementById('link-share').style.display = 'block';
+                document.getElementById('url').innerText = userLink;
+                document.getElementById('url').href = userLink;
+                alert("Đã khởi tạo kho lì xì thành công!");
+            } catch (e) { alert("Lỗi: " + e.message); }
+        };
     </script>
 </body>
 </html>
